@@ -10,7 +10,7 @@ var app=http.createServer(function(req,res){fileServer.serve(req,res);}).listen(
 
 var io=socketIO.listen(app);
 
-var array_of_mobiles=[];
+
 
 var i;
 
@@ -22,7 +22,7 @@ var temp=socket.id;																	//work here rooms!!!!!
 if(io.sockets.adapter.rooms['room']!=undefined){
 var conSockId=Object.keys(io.sockets.adapter.rooms['room'].sockets);
 	var index_of_socket =conSockId.indexOf(temp+"");
-array_of_mobiles[0]=conSockId[0];
+
 }
 var rooms_of_a_socket=io.sockets.adapter.sids[socket.id+""];
 
@@ -142,31 +142,7 @@ var disconnect_callback = function(){
 }
 
 
-//for mobile we have to establish a direct connection
-var joined_mobile_callback = function(){
-	console.log("a new mobile is joined");
-	
-	
-	for(i=1;i<20;i++) {if(array_of_mobiles[i]==undefined) {
-		array_of_mobiles[i]=temp;break;
 
-	}}
-
-	console.log("which is now added to array");
-	var index_of_mobile=array_of_mobiles.indexOf(temp+"");
-	console.log("its index is"+index_of_mobile);
-	io.to(array_of_mobiles[0]).emit("message_server",{type:"start",index:index_of_mobile});  //emit to server
-	console.log("sent the start signal to server:"+array_of_mobiles[0]);
-
-	io.to(temp).emit("message_mobile",{type:"index",index:index_of_mobile});
-	console.log("sent the index to mobile it self:"+temp+"|or|"+array_of_mobiles[index_of_mobile]);
-
-}
-
-var message_mobile_callback=function(message){
-	io.to(array_of_mobiles[message.index]).emit("message_mobile",message.type);
-
-}
 
 var message_server_callback=function(message){
 	io.to(array_of_mobiles[0]).emit("message_server",message);
@@ -194,3 +170,56 @@ socket.on('joined_server',joined_server_callback);
 
 
 io.sockets.on('connection',connected_callback);
+
+
+
+
+function Tree (data) {
+     var node =  new Node (data)
+     this._root = node
+}
+
+function Node (data) {
+      this.data = data
+      this.parent = null
+      this.children = []
+}
+
+Tree.prototype.add = function(data, toData, traversal) {
+      var child = new Node(data), parent = null; 
+      var callback = function(node) {
+              if (node.data === toData) {
+                        parent = node;
+                      }
+            };
+
+    this.contains(callback, traversal);
+
+    if (parent) {
+            parent.children.push(child);
+            child.parent = parent;
+          } else {
+            throw new Error('Cannot add node to a non-existent parent.');
+          } 
+};
+
+Tree.prototype.traverseBF = function(callback) {
+        var queue = new Queue();
+         
+        queue.enqueue(this._root);
+     
+        currentTree = queue.dequeue();
+     
+        while(currentTree){
+                    for (var i = 0, length = currentTree.children.length; i < length; i++) {
+                                    queue.enqueue(currentTree.children[i]);
+                                }
+             
+                    callback(currentTree);
+                    currentTree = queue.dequeue();
+                }
+};
+
+if(currentTree.children.length<max_peer_connections){
+  currentTree.children.push();
+}
