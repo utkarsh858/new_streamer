@@ -15,6 +15,11 @@ var io=socketIO.listen(app);
 var i;
 
 var key_prevSock;var key_nextSock;
+
+
+
+var peer_tree;
+
 var connected_callback=function(socket){
 
 
@@ -23,6 +28,28 @@ if(currentTree.children.length<max_peer_connections){
   currentTree.children.push(socket);
   break;
 }
+
+Tree.prototype.parentMessage = function(message) {
+        var queue = new Queue();
+         
+        queue.enqueue(this._root);
+     
+        currentTree = queue.dequeue();
+     
+        while(currentTree){
+                    for (var i = 0, length = currentTree.children.length; i < length; i++) {
+                                    queue.enqueue(currentTree.children[i]);
+                                    if(currentTree.children[i]==socket){
+                                    	io.to(currentTree).emit('message',{index:socket,data:message});
+                                    }
+                                }
+             
+                    //callback(currentTree);
+                    currentTree = queue.dequeue();
+                }
+};
+
+
 
 
 
@@ -37,7 +64,7 @@ var conSockId=Object.keys(io.sockets.adapter.rooms['room'].sockets);
 var rooms_of_a_socket=io.sockets.adapter.sids[socket.id+""];
 */
 ////////////////////
-var peer_tree;
+
 
 
 
@@ -47,6 +74,7 @@ var peer_tree;
 
 
 var message_next_callback=function(message){
+	/*
 	var temp_room=message.room;
 
 	if(io.sockets.adapter.rooms[temp_room]!=undefined){
@@ -57,10 +85,13 @@ var message_next_callback=function(message){
 
 	io.to(key_nextSock).emit('message_next',message.data);       //in message_next no need to send the room no.
 	console.log("sent the message to next socket"+key_nextSock+"of"+socket.id+"in room"+temp_room);
-	}
+	}*/
+
+	io.to(message.index).emit('message_next',message.data);
 }
 
 var message_callback=function(message){
+	/*
 	var temp_room=message.room;
  if(io.sockets.adapter.rooms[temp_room]!=undefined){
 	 conSockId=Object.keys(io.sockets.adapter.rooms[temp_room].sockets);
@@ -70,7 +101,9 @@ var message_callback=function(message){
 	
 	io.to(key_prevSock).emit('message',message);    //send room also (done because of server)
 	console.log("sent the message to previous socket "+key_prevSock+"of"+socket.id+"in room:"+temp_room);
-	}
+	}*/
+
+	peer_tree.parentMessage(message);
 }
 
 var joined_callback=function(){
@@ -98,9 +131,9 @@ var joined_callback=function(){
 	console.log("received joined request of "+socket.id+"in room:"+temp_room);
 	}}*/
 
-	traverseBF(callback_node_add);
+	peer_tree.traverseBF(callback_node_add);
 
-	io.to(currentTree).emit('message',{room:temp_room,data:"startService"});
+	io.to(currentTree).emit('message',{data:"startService",index:socket});
 
 }
 

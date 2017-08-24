@@ -7,33 +7,29 @@ var pcConfig = {
   }]
 };
 var pc_receiverEnd;  //connection to receive from previous client/server
-var pc_server_to_client;  //connection to forward stream to next joined client
+var pc_server_to_client=new Object();  //connection to forward stream to next joined client
 var video=document.querySelector('#video');
 var channelStream;
+
+
+var n;
+var index;
 ////////////////////////////////
 //telling the server that the client is connected
 socket.emit('joined');
 console.log("sent the signal to send stream");
 
-var room;
 
-function room_callback(message){
-  room=message;
-  console.log("Got my room!!Yipee!:"+room);
-}
-socket.on("room",room_callback);
-/////////////////////////////////////////////////
-if (location.hostname !== 'localhost') {
-  requestTurn(
-    'https://computeengineondemand.appspot.com/turn?username=41784574&key=4080218913'
-  );
-}
+
+            //Remember, the most important thing that signalling server will calculate the parent id of the node that is sending the 
+            // message . That data must be attached to the message itself. 
+
 //////////////////////////////////////
 var message_next_callback = function(message){
 if(message=='send_join_again_signal'){
   console.log("sending joined signal again");
 
-  socket.emit('joined_again',room);                          //this is when some previous client has been disconnected. 
+  socket.emit('joined_again',index);                          //this is when some previous client has been disconnected. 
 }
 else if(message=="startService"){
   console.log('received message for starting service on client');
@@ -56,15 +52,15 @@ socket.on('message_next',message_next_callback);
 function start(){
 if(pc_receiverEnd){pc_receiverEnd.close();pc_receiverEnd=null;console.log("Closing current connection and starting a new one");}
 try{
-		pc_receiverEnd=new RTCPeerConnection(pcConfig);
-		pc_receiverEnd.onicecandidate=handler_IceCandidate;  
-		pc_receiverEnd.onaddstream=handler_remoteStreamAdded;
-		console.log("created peer connection");
-	}
-	catch(e){
-		console.log('Failed to create PeerConnection, exception: ' + e.message);
-    	alert('Cannot create RTCPeerConnection object.');
-	}
+    pc_receiverEnd=new RTCPeerConnection(pcConfig);
+    pc_receiverEnd.onicecandidate=handler_IceCandidate;  
+    pc_receiverEnd.onaddstream=handler_remoteStreamAdded;
+    console.log("created peer connection");
+  }
+  catch(e){
+    console.log('Failed to create PeerConnection, exception: ' + e.message);
+      alert('Cannot create RTCPeerConnection object.');
+  }
 
 }
 ////////////////////////////////////
@@ -83,14 +79,17 @@ function handler_remoteStreamAdded(event) {
 
   //
   console.log("sending send_join_signal");
-  socket.emit('message_next',{room:room,data:'send_join_again_signal'});
+//  
+                   // work here
+ /// socket.emit('message_next',{index:index,data:'send_join_again_signal'});
+//
 }
 
 function handler_IceCandidate(event){
-	console.log('icecandidate event: ', event);													//work here
-	//sending info about network candidate to first client
+  console.log('icecandidate event: ', event);                         
+  //sending info about network candidate to first client
   if (event.candidate) {
-    socket.emit('message',{room:room,data:{
+    socket.emit('message',{index:index,data:{
       type: 'candidate',
       label: event.candidate.sdpMLineIndex,
       id: event.candidate.sdpMid,
@@ -106,7 +105,7 @@ function doAnswer() {
   pc_receiverEnd.createAnswer().then(
     setLocalAndSendMessage,
     function(error){
-    	console.log('Failed to create session description: ' + error.toString());
+      console.log('Failed to create session description: ' + error.toString());
     }
   );
 }
@@ -114,37 +113,8 @@ function doAnswer() {
 function setLocalAndSendMessage(sessionDescription){
   pc_receiverEnd.setLocalDescription(sessionDescription);
   console.log('setLocalAndSendMessage sending message', sessionDescription);
-  socket.emit('message',{room:room,data:sessionDescription});																			//work here
+  socket.emit('message',{index:index,data:sessionDescription});                                     //work here
 
-}
-///////////////////////////////////////////////////////
-function requestTurn(turnURL) {
-  var turnExists = false;
-  for (var i in pcConfig.iceServers) {
-    if (pcConfig.iceServers[i].url.substr(0, 5) === 'turn:') {
-      turnExists = true;
-      turnReady = true;
-      break;
-    }
-  }
-  if (!turnExists) {
-    console.log('Getting TURN server from ', turnURL);
-    // No TURN server. Get one from computeengineondemand.appspot.com:
-    var xhr = new XMLHttpRequest();
-    xhr.onreadystatechange = function() {
-      if (xhr.readyState === 4 && xhr.status === 200) {
-        var turnServer = JSON.parse(xhr.responseText);
-        console.log('Got TURN server: ', turnServer);
-        pcConfig.iceServers.push({
-          'url': 'turn:' + turnServer.username + '@' + turnServer.turn,
-          'credential': turnServer.password
-        });
-        turnReady = true;
-      }
-    };
-    xhr.open('GET', turnURL, true);
-    xhr.send();
-  }
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -153,9 +123,12 @@ function requestTurn(turnURL) {
 //messaging service listening for messages from next sockets
 
 var message_callback = function(message){
+
+
   if(message.data=='startService'){
   console.log("starting service and sending signal to client");
-  socket.emit('message_next',{room:room,data:"startService"});
+index=message.index;                                                                        /
+  socket.emit('message_next',{index:index,data:"startService"});
   maybeStartForNextClient();
 }
  else if (message.data.type === 'candidate' ) {
@@ -163,9 +136,13 @@ var message_callback = function(message){
       sdpMLineIndex: message.data.label,
       candidate: message.data.candidate
     });
-    pc_server_to_client.addIceCandidate(candidate);}
+
+    index=message.index;                                                                     
+    pc_server_to_client.index.addIceCandidate(candidate);}
 else if (message.data.type === 'answer') {
-    pc_server_to_client.setRemoteDescription(new RTCSessionDescription(message.data));
+
+    index=message.index;                                                                     //added
+    pc_server_to_client.index.setRemoteDescription(new RTCSessionDescription(message.data));
   } 
 }
 
@@ -176,15 +153,15 @@ socket.on('message',message_callback);
 function maybeStartForNextClient(){
   console.log("may be start called now creating peer connection");
   //peer connection
-  if(pc_server_to_client){pc_server_to_client.close();pc_server_to_client=null;console.log("Closing current connection and starting a new one");}
+  if(pc_server_to_client.index.index){pc_server_to_client.index.close();pc_server_to_client.index=null;console.log("Closing current connection and starting a new one");}
   try{
-    pc_server_to_client=new RTCPeerConnection(pcConfig);
-    pc_server_to_client.onicecandidate=handler_next_IceCandidate;  //no onaddstream handler
+    pc_server_to_client.index=new RTCPeerConnection(pcConfig);
+    pc_server_to_client.index.onicecandidate=handler_next_IceCandidate;  //no onaddstream handler
 
     console.log("created peer connection");
-    pc_server_to_client.addStream(channelStream);
+    pc_server_to_client.index.addStream(channelStream);
     //sending offer to client
-    pc_server_to_client.createOffer(next_setLocalAndSendMessage, function(event){console.log("cannont create offer:"+event);});
+    pc_server_to_client.index.createOffer(next_setLocalAndSendMessage, function(event){console.log("cannont create offer:"+event);});
 
   }
   catch(e){
@@ -199,7 +176,7 @@ function handler_next_IceCandidate(event){
     console.log('icecandidate event: ', event);                         //work here
   //sending info about network candidate to first client
   if (event.candidate) {
-    socket.emit('message_next',{room:room,data:{
+    socket.emit('message_next',{index:index,data:{
       type: 'candidate',
       label: event.candidate.sdpMLineIndex,
       id: event.candidate.sdpMid,
@@ -211,8 +188,8 @@ function handler_next_IceCandidate(event){
 }
 
 function next_setLocalAndSendMessage(sessionDescription){
-  pc_server_to_client.setLocalDescription(sessionDescription);
+  pc_server_to_client.index.setLocalDescription(sessionDescription);
   console.log('next_setLocalAndSendMessage sending message', sessionDescription);
-  socket.emit('message_next',{room:room,data:sessionDescription});                                      //work here
+  socket.emit('message_next',{index:index,data:sessionDescription});                                      //work here
 
 }
