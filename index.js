@@ -16,6 +16,53 @@ var i;
 
 var key_prevSock;var key_nextSock;
 
+function Tree (data) {
+     var node =  new Node (data);
+     this._root = node;
+}
+
+function Node (data) {
+      this.data = data;
+      this.parent = null;
+      this.children = [];
+}
+
+Tree.prototype.add = function(data, toData, traversal) {
+      var child = new Node(data);var  parent = null; 
+      var callback = function(node) {
+              if (node.data === toData) {
+                        parent = node;
+                      }
+            };
+
+    this.contains(callback, traversal);
+
+    if (parent) {
+            parent.children.push(child);
+            child.parent = parent;
+          } else {
+            throw new Error('Cannot add node to a non-existent parent.');
+          } 
+};
+
+Tree.prototype.traverseBF = function(callback) {
+        var queue = new Queue();
+         
+        queue.enqueue(this._root);
+     
+        currentTree = queue.dequeue();
+     
+        while(currentTree){
+                    for (var i = 0, length = currentTree.children.length; i < length; i++) {
+                                    queue.enqueue(currentTree.children[i]);
+                                }
+             
+                    callback(currentTree);break;
+                    currentTree = queue.dequeue();
+                }
+};
+
+
 
 
 var peer_tree;
@@ -26,7 +73,7 @@ var connected_callback=function(socket){
 var callback_node_add=function(){
 if(currentTree.children.length<max_peer_connections){
   currentTree.children.push(socket);
-  break;
+  
 }
 
 Tree.prototype.parentMessage = function(message) {
@@ -138,6 +185,8 @@ var joined_callback=function(){
 }
 
 var joined_again_callback =function(room){
+
+	/*
 	if(io.sockets.adapter.rooms[room]!=undefined){
 	console.log(io.sockets.adapter.rooms[room]);
 	
@@ -149,12 +198,12 @@ var joined_again_callback =function(room){
 	io.to(key_prevSock).emit('message',{room:room,data:"startService"});
 	console.log("received joined request of "+socket.id+"in room:"+room);
 	}
-
+	*/
 }
 
 var disconnect_callback = function(){
 	
-	
+	/*
 	var isMobile=array_of_mobiles.indexOf(temp);   
 	if(isMobile==-1)
 
@@ -188,7 +237,7 @@ var disconnect_callback = function(){
 		 delete array_of_mobiles[isMobile];
 		io.to(array_of_mobiles[0]).emit("disconnect_mobile",isMobile);
 
-	}
+	}*/
 
 }
 
@@ -227,55 +276,3 @@ io.sockets.on('connection',connected_callback);
 
 
 
-function Tree (data) {
-     var node =  new Node (data)
-     this._root = node
-}
-
-function Node (data) {
-      this.data = data
-      this.parent = null
-      this.children = []
-}
-
-Tree.prototype.add = function(data, toData, traversal) {
-      var child = new Node(data), parent = null; 
-      var callback = function(node) {
-              if (node.data === toData) {
-                        parent = node;
-                      }
-            };
-
-    this.contains(callback, traversal);
-
-    if (parent) {
-            parent.children.push(child);
-            child.parent = parent;
-          } else {
-            throw new Error('Cannot add node to a non-existent parent.');
-          } 
-};
-
-Tree.prototype.traverseBF = function(callback) {
-        var queue = new Queue();
-         
-        queue.enqueue(this._root);
-     
-        currentTree = queue.dequeue();
-     
-        while(currentTree){
-                    for (var i = 0, length = currentTree.children.length; i < length; i++) {
-                                    queue.enqueue(currentTree.children[i]);
-                                }
-             
-                    callback(currentTree);
-                    currentTree = queue.dequeue();
-                }
-};
-
-
-var callback_node_add=function(){
-if(currentTree.children.length<max_peer_connections){
-  currentTree.children.push(socket);
-  break;
-}}
