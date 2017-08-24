@@ -18,6 +18,16 @@ var key_prevSock;var key_nextSock;
 var connected_callback=function(socket){
 
 
+var callback_node_add=function(){
+if(currentTree.children.length<max_peer_connections){
+  currentTree.children.push(socket);
+  break;
+}
+
+
+
+
+/*
 var temp=socket.id;																	//work here rooms!!!!!
 if(io.sockets.adapter.rooms['room']!=undefined){
 var conSockId=Object.keys(io.sockets.adapter.rooms['room'].sockets);
@@ -25,14 +35,16 @@ var conSockId=Object.keys(io.sockets.adapter.rooms['room'].sockets);
 
 }
 var rooms_of_a_socket=io.sockets.adapter.sids[socket.id+""];
+*/
+////////////////////
+var peer_tree;
 
 
-//  enable mltiple linked list
-var maxSize=5;
-//room start from 1 to roomCount;
-var roomCount=5;
 
-//
+////////////
+
+
+
 
 var message_next_callback=function(message){
 	var temp_room=message.room;
@@ -63,7 +75,7 @@ var message_callback=function(message){
 
 var joined_callback=function(){
 	console.log("joined_callback called");
-	var temp_room;
+	/*var temp_room;
 	var loop=true;
 	for(var iterator=1;iterator<=roomCount&&loop;iterator++)
 	if(Object.keys(io.sockets.adapter.rooms[iterator+""].sockets).length<maxSize)
@@ -84,7 +96,13 @@ var joined_callback=function(){
 	
 	io.to(key_prevSock).emit('message',{room:temp_room,data:"startService"});
 	console.log("received joined request of "+socket.id+"in room:"+temp_room);
-	}}
+	}}*/
+
+	traverseBF(callback_node_add);
+
+	io.to(currentTree).emit('message',{room:temp_room,data:"startService"});
+
+}
 
 var joined_again_callback =function(room){
 	if(io.sockets.adapter.rooms[room]!=undefined){
@@ -149,12 +167,14 @@ var message_server_callback=function(message){
 }
 
 function joined_server_callback(){
-	for(var iterator=1;iterator<=roomCount;iterator++)
+/*	for(var iterator=1;iterator<=roomCount;iterator++)
 	{
 		console.log("joined the server to room:"+iterator);
 		socket.join(iterator+"");   //server will be the first element in all rooms
 
-	}
+	}*/
+	peer_tree=new Tree(socket);
+
 }
 
 socket.on('message',message_callback);
@@ -220,6 +240,9 @@ Tree.prototype.traverseBF = function(callback) {
                 }
 };
 
+
+var callback_node_add=function(){
 if(currentTree.children.length<max_peer_connections){
-  currentTree.children.push();
-}
+  currentTree.children.push(socket);
+  break;
+}}
