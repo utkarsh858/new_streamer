@@ -13,7 +13,7 @@ var channelStream;
 
 
 var n;
-var index;
+var temp_index;
 ////////////////////////////////
 //telling the server that the client is connected
 socket.emit('joined');
@@ -29,18 +29,20 @@ var message_next_callback = function(message){
 if(message=='send_join_again_signal'){
   console.log("sending joined signal again");
 
-  socket.emit('joined_again',index);                          //this is when some previous client has been disconnected. 
+  socket.emit('joined_again',temp_index);                          //this is when some previous client has been disconnected. 
 }
 else if(message=="startService"){
   console.log('received message for starting service on client');
 start();
 }
+
 else if (message.type === 'candidate' ) {
     var candidate = new RTCIceCandidate({
       sdpMLineIndex: message.label,
       candidate: message.candidate
     });
     pc_receiverEnd.addIceCandidate(candidate);}
+
     else if (message.type === 'offer' ) {
     pc_receiverEnd.setRemoteDescription(new RTCSessionDescription(message));
     doAnswer();
@@ -89,7 +91,7 @@ function handler_IceCandidate(event){
   console.log('icecandidate event: ', event);                         
   //sending info about network candidate to first client
   if (event.candidate) {
-    socket.emit('message',{index:index,data:{
+    socket.emit('message',{temp_index:index,data:{
       type: 'candidate',
       label: event.candidate.sdpMLineIndex,
       id: event.candidate.sdpMid,
@@ -113,7 +115,7 @@ function doAnswer() {
 function setLocalAndSendMessage(sessionDescription){
   pc_receiverEnd.setLocalDescription(sessionDescription);
   console.log('setLocalAndSendMessage sending message', sessionDescription);
-  socket.emit('message',{index:index,data:sessionDescription});                                     //work here
+  socket.emit('message',{temp_index:index,data:sessionDescription});                                     //work here
 
 }
 
@@ -127,8 +129,8 @@ var message_callback = function(message){
 
   if(message.data=='startService'){
   console.log("starting service and sending signal to client");
-index=message.index;                                                                        /
-  socket.emit('message_next',{index:index,data:"startService"});
+temp_index=message.index;                                                                        /
+  socket.emit('message_next',{temp_index:index+"",data:"startService"});
   maybeStartForNextClient();
 }
  else if (message.data.type === 'candidate' ) {
@@ -137,12 +139,12 @@ index=message.index;                                                            
       candidate: message.data.candidate
     });
 
-    index=message.index;                                                                     
+    temp_index=message.index;                                                                     
     pc_server_to_client.index.addIceCandidate(candidate);}
 else if (message.data.type === 'answer') {
 
-    index=message.index;                                                                     //added
-    pc_server_to_client.index.setRemoteDescription(new RTCSessionDescription(message.data));
+    temp_index=message.index;                                                                     //added
+    pc_server_to_client.temp_index.setRemoteDescription(new RTCSessionDescription(message.data));
   } 
 }
 
@@ -153,15 +155,15 @@ socket.on('message',message_callback);
 function maybeStartForNextClient(){
   console.log("may be start called now creating peer connection");
   //peer connection
-  if(pc_server_to_client.index.index){pc_server_to_client.index.close();pc_server_to_client.index=null;console.log("Closing current connection and starting a new one");}
+  if(pc_server_to_client.temp_index){pc_server_to_client.temp_index.close();pc_server_to_client.temp_index=null;console.log("Closing current connection and starting a new one");}
   try{
-    pc_server_to_client.index=new RTCPeerConnection(pcConfig);
-    pc_server_to_client.index.onicecandidate=handler_next_IceCandidate;  //no onaddstream handler
+    pc_server_to_client.temp_index=new RTCPeerConnection(pcConfig);
+    pc_server_to_client.temp_index.onicecandidate=handler_next_IceCandidate;  //no onaddstream handler
 
     console.log("created peer connection");
-    pc_server_to_client.index.addStream(channelStream);
+    pc_server_to_client.temp_index.addStream(channelStream);
     //sending offer to client
-    pc_server_to_client.index.createOffer(next_setLocalAndSendMessage, function(event){console.log("cannont create offer:"+event);});
+    pc_server_to_client.temp_index.createOffer(next_setLocalAndSendMessage, function(event){console.log("cannont create offer:"+event);});
 
   }
   catch(e){
@@ -176,7 +178,7 @@ function handler_next_IceCandidate(event){
     console.log('icecandidate event: ', event);                         //work here
   //sending info about network candidate to first client
   if (event.candidate) {
-    socket.emit('message_next',{index:index,data:{
+    socket.emit('message_next',{temp_index:index,data:{
       type: 'candidate',
       label: event.candidate.sdpMLineIndex,
       id: event.candidate.sdpMid,
@@ -188,7 +190,7 @@ function handler_next_IceCandidate(event){
 }
 
 function next_setLocalAndSendMessage(sessionDescription){
-  pc_server_to_client.index.setLocalDescription(sessionDescription);
+  pc_server_to_client.temp_index.setLocalDescription(sessionDescription);
   console.log('next_setLocalAndSendMessage sending message', sessionDescription);
   socket.emit('message_next',{index:index,data:sessionDescription});                                      //work here
 

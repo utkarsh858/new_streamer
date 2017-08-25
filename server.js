@@ -109,7 +109,7 @@ function handler_IceCandidate(event){
 }
 
 function setLocalAndSendMessage(sessionDescription){
-  pc_server_to_client[].setLocalDescription(sessionDescription);
+  pc_server_to_client.index.setLocalDescription(sessionDescription);
   console.log('setLocalAndSendMessage sending message', sessionDescription);
   socket.emit('message_next',{index:index,data:sessionDescription}); 								
 

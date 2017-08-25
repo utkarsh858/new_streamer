@@ -11,11 +11,11 @@ var app=http.createServer(function(req,res){fileServer.serve(req,res);}).listen(
 var io=socketIO.listen(app);
 
 
-
+/*
 var i;
 
 var key_prevSock;var key_nextSock;
-
+*/
 function Tree (data) {
      var node =  new Node (data);
      this._root = node;
@@ -69,11 +69,20 @@ var peer_tree;
 
 var connected_callback=function(socket){
 
-
+/*
 var callback_node_add=function(){
 if(currentTree.children.length<max_peer_connections){
   currentTree.children.push(socket);
   
+}
+*/
+
+Tree.prototype.callback_node_add=function(){
+
+if(currentTree.children.length<max_peer_connections){
+  currentTree.children.push(socket);
+  
+}
 }
 
 Tree.prototype.parentMessage = function(message) {
@@ -178,14 +187,14 @@ var joined_callback=function(){
 	console.log("received joined request of "+socket.id+"in room:"+temp_room);
 	}}*/
 
-	peer_tree.traverseBF(callback_node_add);
+	peer_tree.traverseBF(peer_tree.callback_node_add);
 
 	io.to(currentTree).emit('message',{data:"startService",index:socket});
 
 }
 
 var joined_again_callback =function(room){
-
+	console.log("joined_again");
 	/*
 	if(io.sockets.adapter.rooms[room]!=undefined){
 	console.log(io.sockets.adapter.rooms[room]);
@@ -202,7 +211,7 @@ var joined_again_callback =function(room){
 }
 
 var disconnect_callback = function(){
-	
+	console.log("disconnecteds")
 	/*
 	var isMobile=array_of_mobiles.indexOf(temp);   
 	if(isMobile==-1)
@@ -243,10 +252,10 @@ var disconnect_callback = function(){
 
 
 
-
+/*
 var message_server_callback=function(message){
 	io.to(array_of_mobiles[0]).emit("message_server",message);
-}
+}*/
 
 function joined_server_callback(){
 /*	for(var iterator=1;iterator<=roomCount;iterator++)
@@ -256,6 +265,8 @@ function joined_server_callback(){
 
 	}*/
 	peer_tree=new Tree(socket);
+	console.log("created tree::");
+	console.log(peer_tree);
 
 }
 
@@ -264,9 +275,7 @@ socket.on('message_next',message_next_callback);
 socket.on('joined',joined_callback);
 socket.on('joined_again',joined_again_callback);
 socket.on('disconnect',disconnect_callback);
-socket.on('joined_mobile',joined_mobile_callback);
-socket.on('message_mobile',message_mobile_callback);
-socket.on('message_server',message_server_callback);
+
 socket.on('joined_server',joined_server_callback);
 }
 
