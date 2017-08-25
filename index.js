@@ -10,6 +10,40 @@ var app=http.createServer(function(req,res){fileServer.serve(req,res);}).listen(
 
 var io=socketIO.listen(app);
 
+var Queue = function() {
+	this.first = null;
+	this.size = 0;
+};
+
+var Nope = function(data) {
+	this.data = data;
+	this.next = null;
+};
+
+Queue.prototype.enqueue = function(data) {
+	var node = new Nope(data);
+
+	if (!this.first){
+		this.first = node;
+	} else {
+		n = this.first;
+		while (n.next) {
+			n = n.next;
+		}
+		n.next = node;
+	}
+
+	this.size += 1;
+	return node;
+};
+
+Queue.prototype.dequeue = function() {
+	var temp = this.first;
+	this.first = this.first.next;
+	this.size -= 1;
+	return temp;
+};
+
 
 /*
 var i;
@@ -17,49 +51,49 @@ var i;
 var key_prevSock;var key_nextSock;
 */
 function Tree (data) {
-     var node =  new Node (data);
-     this._root = node;
+	var node =  new Node (data);
+	this._root = node;
 }
 
 function Node (data) {
-      this.data = data;
-      this.parent = null;
-      this.children = [];
+	this.data = data;
+	this.parent = null;
+	this.children = [];
 }
 
 Tree.prototype.add = function(data, toData, traversal) {
-      var child = new Node(data);var  parent = null; 
-      var callback = function(node) {
-              if (node.data === toData) {
-                        parent = node;
-                      }
-            };
+	var child = new Node(data);var  parent = null; 
+	var callback = function(node) {
+		if (node.data === toData) {
+			parent = node;
+		}
+	};
 
-    this.contains(callback, traversal);
+	this.contains(callback, traversal);
 
-    if (parent) {
-            parent.children.push(child);
-            child.parent = parent;
-          } else {
-            throw new Error('Cannot add node to a non-existent parent.');
-          } 
+	if (parent) {
+		parent.children.push(child);
+		child.parent = parent;
+	} else {
+		throw new Error('Cannot add node to a non-existent parent.');
+	} 
 };
 
 Tree.prototype.traverseBF = function(callback) {
-        var queue = new Queue();
-         
-        queue.enqueue(this._root);
-     
-        currentTree = queue.dequeue();
-     
-        while(currentTree){
-                    for (var i = 0, length = currentTree.children.length; i < length; i++) {
-                                    queue.enqueue(currentTree.children[i]);
-                                }
-             
-                    callback(currentTree);break;
-                    currentTree = queue.dequeue();
-                }
+	var queue = new Queue();
+
+	queue.enqueue(this._root);
+
+	var currentTree = queue.dequeue();
+
+	while(currentTree){
+		for (var i = 0, length = currentTree.data.children.length; i < length; i++) {
+			queue.enqueue(currentTree.data.children[i]);
+		}
+
+		callback(currentTree);break;
+		currentTree = queue.dequeue();
+	}
 };
 
 
@@ -71,39 +105,42 @@ var connected_callback=function(socket){
 
 /*
 var callback_node_add=function(){
-if(currentTree.children.length<max_peer_connections){
-  currentTree.children.push(socket);
+if(currentTree.data.children.length<max_peer_connections){
+  currentTree.data.children.push(socket);
   
 }
 */
+var max_peer_connections=5;
 
-Tree.prototype.callback_node_add=function(){
+var callback_node_add=function(currentTree){
 
-if(currentTree.children.length<max_peer_connections){
-  currentTree.children.push(socket);
-  
+	if(currentTree.data.children.length<max_peer_connections){
+		currentTree.data.children.push(socket);
+		io.to(currentTree.data).emit('message',{data:"startService",index:socket});
+
+	}
 }
-}
+
 
 Tree.prototype.parentMessage = function(message) {
-        var queue = new Queue();
-         
-        queue.enqueue(this._root);
-     
-        currentTree = queue.dequeue();
-     
-        while(currentTree){
-                    for (var i = 0, length = currentTree.children.length; i < length; i++) {
-                                    queue.enqueue(currentTree.children[i]);
-                                    if(currentTree.children[i]==socket){
-                                    	io.to(currentTree).emit('message',{index:socket,data:message});
-                                    }
-                                }
-             
+	var queue = new Queue();
+
+	queue.enqueue(this._root);
+
+	var currentTree = queue.dequeue();
+
+	while(currentTree){
+		for (var i = 0, length = currentTree.data.children.length; i < length; i++) {
+			queue.enqueue(currentTree.data.children[i]);
+			if(currentTree.data.children[i]==socket){
+				io.to(currentTree.data).emit('message',{index:socket,data:message});return;
+			}
+		}
+
                     //callback(currentTree);
                     currentTree = queue.dequeue();
                 }
-};
+            };
 
 
 
@@ -141,9 +178,9 @@ var message_next_callback=function(message){
 
 	io.to(key_nextSock).emit('message_next',message.data);       //in message_next no need to send the room no.
 	console.log("sent the message to next socket"+key_nextSock+"of"+socket.id+"in room"+temp_room);
-	}*/
+}*/
 
-	io.to(message.index).emit('message_next',message.data);
+io.to(message.index).emit('message_next',message.data);
 }
 
 var message_callback=function(message){
@@ -157,9 +194,9 @@ var message_callback=function(message){
 	
 	io.to(key_prevSock).emit('message',message);    //send room also (done because of server)
 	console.log("sent the message to previous socket "+key_prevSock+"of"+socket.id+"in room:"+temp_room);
-	}*/
+}*/
 
-	peer_tree.parentMessage(message);
+peer_tree.parentMessage(message);
 }
 
 var joined_callback=function(){
@@ -185,11 +222,11 @@ var joined_callback=function(){
 	
 	io.to(key_prevSock).emit('message',{room:temp_room,data:"startService"});
 	console.log("received joined request of "+socket.id+"in room:"+temp_room);
-	}}*/
+}}*/
 
-	peer_tree.traverseBF(peer_tree.callback_node_add);
+peer_tree.traverseBF(callback_node_add);
 
-	io.to(currentTree).emit('message',{data:"startService",index:socket});
+
 
 }
 

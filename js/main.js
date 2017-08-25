@@ -129,7 +129,7 @@ var message_callback = function(message){
 
   if(message.data=='startService'){
   console.log("starting service and sending signal to client");
-temp_index=message.index;                                                                        /
+temp_index=message.index;
   socket.emit('message_next',{temp_index:index+"",data:"startService"});
   maybeStartForNextClient();
 }
