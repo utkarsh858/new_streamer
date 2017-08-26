@@ -22,7 +22,7 @@ var Nope = function(data) {
 
 Queue.prototype.enqueue = function(data) {
 	var node = new Nope(data);
-
+	var n;
 	if (!this.first){
 		this.first = node;
 	} else {
