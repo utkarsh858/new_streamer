@@ -6,7 +6,7 @@ var channelStream;
 var socket_server=io.connect();
 
 var pc_server_to_client=new Object();    //each element of the array represents first node of a sin gle linked list
-var index;  //stores index for a short amount of time till the connection is established 
+var temp_index;  //stores index for a short amount of time till the connection is established 
 
 var pcConfig = {
   'iceServers': [{
@@ -34,9 +34,9 @@ if(message.data=='startService'){
       sdpMLineIndex: message.data.label,
       candidate: message.data.candidate
     });
-    pc_server_to_client.index.addIceCandidate(candidate);}
+    pc_server_to_client.temp_index.addIceCandidate(candidate);}
 else if (message.data.type === 'answer') {
-    pc_server_to_client.index.setRemoteDescription(new RTCSessionDescription(message.data));
+    pc_server_to_client.temp_index.setRemoteDescription(new RTCSessionDescription(message.data));
   } 
 }
 
@@ -74,15 +74,15 @@ function gotStream(stream){
 function maybeStart(){
 	console.log("may be start called now creating peer connection");
 	//peer connection
-	if(pc_server_to_client.index) {pc_server_to_client.index.close();pc_server_to_client.index=null;console.log("Closing current connection and starting a new one");}
+	if(pc_server_to_client.temp_index) {pc_server_to_client.temp_index.close();pc_server_to_client.temp_index=null;console.log("Closing current connection and starting a new one");}
 	try{
-		pc_server_to_client.index=new RTCPeerConnection(pcConfig);
-		pc_server_to_client.index.onicecandidate=handler_IceCandidate;  //no onaddstream handler
+		pc_server_to_client.temp_index=new RTCPeerConnection(pcConfig);
+		pc_server_to_client.temp_index.onicecandidate=handler_IceCandidate;  //no onaddstream handler
 
 		console.log("created peer connection");
-		pc_server_to_client.index.addStream(channelStream);
+		pc_server_to_client.temp_index.addStream(channelStream);
 		//sending offer to client
-		pc_server_to_client.index.createOffer(setLocalAndSendMessage, function(event){console.log("cannont create offer:"+event);});
+		pc_server_to_client.temp_index.createOffer(setLocalAndSendMessage, function(event){console.log("cannont create offer:"+event);});
 
 	}
 	catch(e){
@@ -97,7 +97,7 @@ function handler_IceCandidate(event){
 	console.log('icecandidate event: ', event);													
 	//sending info about network candidate to first client
   if (event.candidate) {
-    socket_server.emit('message_next',{index:index,data:{
+    socket_server.emit('message_next',{index:temp_index,data:{
       type: 'candidate',
       label: event.candidate.sdpMLineIndex,
       id: event.candidate.sdpMid,
@@ -109,9 +109,9 @@ function handler_IceCandidate(event){
 }
 
 function setLocalAndSendMessage(sessionDescription){
-  pc_server_to_client.index.setLocalDescription(sessionDescription);
+  pc_server_to_client.temp_index.setLocalDescription(sessionDescription);
   console.log('setLocalAndSendMessage sending message', sessionDescription);
-  socket.emit('message_next',{index:index,data:sessionDescription}); 								
+  socket_server.emit('message_next',{index:temp_index,data:sessionDescription}); 								
 
 }
 

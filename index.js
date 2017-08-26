@@ -116,8 +116,8 @@ var callback_node_add=function(currentTree){
 
 	if(currentTree.data.children.length<max_peer_connections){
 		currentTree.data.children.push(socket.id);
-		io.to(currentTree.data).emit('message',{data:"startService",index:socket.id});
-
+		io.to(currentTree.data.data).emit('message',{data:"startService",index:socket.id});
+		console.log("sent message to socket:  ");console.log(currentTree.data.data);
 	}
 }
 
