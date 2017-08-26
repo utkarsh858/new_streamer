@@ -115,8 +115,8 @@ var max_peer_connections=5;
 var callback_node_add=function(currentTree){
 
 	if(currentTree.data.children.length<max_peer_connections){
-		currentTree.data.children.push(socket+"");
-		io.to(currentTree.data).emit('message',{data:"startService",index:socket+""});
+		currentTree.data.children.push(socket.id);
+		io.to(currentTree.data).emit('message',{data:"startService",index:socket.id});
 
 	}
 }
@@ -132,8 +132,8 @@ Tree.prototype.parentMessage = function(message) {
 	while(currentTree){
 		for (var i = 0, length = currentTree.data.children.length; i < length; i++) {
 			queue.enqueue(currentTree.data.children[i]);
-			if(currentTree.data.children[i]==socket+""){
-				io.to(currentTree.data).emit('message',{index:socket+"",data:message});return;
+			if(currentTree.data.children[i]==socket.id){
+				io.to(currentTree.data).emit('message',{index:socket.id,data:message});return;
 			}
 		}
 
@@ -301,7 +301,7 @@ function joined_server_callback(){
 		socket.join(iterator+"");   //server will be the first element in all rooms
 
 	}*/
-	peer_tree=new Tree(socket+"");
+	peer_tree=new Tree(socket.id);
 	console.log("created tree::");
 	console.log(peer_tree);
 
