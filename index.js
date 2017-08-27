@@ -80,6 +80,8 @@ Tree.prototype.add = function(data, toData, traversal) {
 };
 
 Tree.prototype.traverseBF = function(callback) {
+		console.log("traverseBF called");
+	
 	var queue = new Queue();
 
 	queue.enqueue(this._root);
@@ -88,10 +90,11 @@ Tree.prototype.traverseBF = function(callback) {
 
 	while(currentTree){
 		for (var i = 0, length = currentTree.data.children.length; i < length; i++) {
+			console.log("looping");
 			queue.enqueue(currentTree.data.children[i]);
 		}
 
-		callback(currentTree);break;
+		callback(currentTree);console.log("BFS breaks");break;
 		currentTree = queue.dequeue();
 	}
 };
@@ -99,7 +102,7 @@ Tree.prototype.traverseBF = function(callback) {
 
 
 
-var peer_tree;
+var peer_tree = new Tree();
 
 var connected_callback=function(socket){
 
@@ -113,7 +116,7 @@ if(currentTree.data.children.length<max_peer_connections){
 var max_peer_connections=5;
 
 var callback_node_add=function(currentTree){
-
+	console.log("node_add callled");
 	if(currentTree.data.children.length<max_peer_connections){
 		currentTree.data.children.push(socket);
 		io.to(currentTree.data).emit('message',{data:"startService",index:socket});
@@ -130,10 +133,11 @@ Tree.prototype.parentMessage = function(message) {
 	var currentTree = queue.dequeue();
 
 	while(currentTree){
+		console.log("parentMessage called")
 		for (var i = 0, length = currentTree.data.children.length; i < length; i++) {
 			queue.enqueue(currentTree.data.children[i]);
 			if(currentTree.data.children[i]==socket){
-				io.to(currentTree.data).emit('message',{index:socket,data:message});return;
+				io.to(currentTree.data).emit('message',{index:socket,data:message});console.log("parent messaging breaks");return;
 			}
 		}
 
@@ -303,7 +307,7 @@ function joined_server_callback(){
 	}*/
 	peer_tree=new Tree(socket);
 	console.log("created tree::");
-	console.log(peer_tree);
+	
 
 }
 
