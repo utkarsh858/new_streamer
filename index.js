@@ -22,7 +22,7 @@ var Nope = function(data) {
 
 Queue.prototype.enqueue = function(data) {
 	var node = new Nope(data);
-
+	var n;
 	if (!this.first){
 		this.first = node;
 	} else {
@@ -118,9 +118,9 @@ var max_peer_connections=5;
 var callback_node_add=function(currentTree){
 	console.log("node_add callled");
 	if(currentTree.data.children.length<max_peer_connections){
-		currentTree.data.children.push(socket);
-		io.to(currentTree.data).emit('message',{data:"startService",index:socket});
-
+		currentTree.data.children.push(socket.id);
+		io.to(currentTree.data.data).emit('message',{data:"startService",index:socket.id});
+		console.log("sent message to socket:  ");console.log(currentTree.data.data);
 	}
 }
 
@@ -136,8 +136,8 @@ Tree.prototype.parentMessage = function(message) {
 		console.log("parentMessage called")
 		for (var i = 0, length = currentTree.data.children.length; i < length; i++) {
 			queue.enqueue(currentTree.data.children[i]);
-			if(currentTree.data.children[i]==socket){
-				io.to(currentTree.data).emit('message',{index:socket,data:message});console.log("parent messaging breaks");return;
+			if(currentTree.data.children[i]==socket.id){
+				io.to(currentTree.data).emit('message',{index:socket.id,data:message});return;
 			}
 		}
 
@@ -305,7 +305,7 @@ function joined_server_callback(){
 		socket.join(iterator+"");   //server will be the first element in all rooms
 
 	}*/
-	peer_tree=new Tree(socket);
+	peer_tree=new Tree(socket.id);
 	console.log("created tree::");
 	
 

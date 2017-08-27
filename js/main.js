@@ -91,7 +91,7 @@ function handler_IceCandidate(event){
   console.log('icecandidate event: ', event);                         
   //sending info about network candidate to first client
   if (event.candidate) {
-    socket.emit('message',{temp_index:index,data:{
+    socket.emit('message',{index:temp_index,data:{
       type: 'candidate',
       label: event.candidate.sdpMLineIndex,
       id: event.candidate.sdpMid,
@@ -115,7 +115,7 @@ function doAnswer() {
 function setLocalAndSendMessage(sessionDescription){
   pc_receiverEnd.setLocalDescription(sessionDescription);
   console.log('setLocalAndSendMessage sending message', sessionDescription);
-  socket.emit('message',{temp_index:index,data:sessionDescription});                                     //work here
+  socket.emit('message',{index:temp_index,data:sessionDescription});                                     //work here
 
 }
 
@@ -130,7 +130,7 @@ var message_callback = function(message){
   if(message.data=='startService'){
   console.log("starting service and sending signal to client");
 temp_index=message.index;
-  socket.emit('message_next',{temp_index:index+"",data:"startService"});
+  socket.emit('message_next',{index:temp_index+"",data:"startService"});
   maybeStartForNextClient();
 }
  else if (message.data.type === 'candidate' ) {
@@ -140,7 +140,7 @@ temp_index=message.index;
     });
 
     temp_index=message.index;                                                                     
-    pc_server_to_client.index.addIceCandidate(candidate);}
+    pc_server_to_client.temp_index.addIceCandidate(candidate);}
 else if (message.data.type === 'answer') {
 
     temp_index=message.index;                                                                     //added
@@ -192,6 +192,6 @@ function handler_next_IceCandidate(event){
 function next_setLocalAndSendMessage(sessionDescription){
   pc_server_to_client.temp_index.setLocalDescription(sessionDescription);
   console.log('next_setLocalAndSendMessage sending message', sessionDescription);
-  socket.emit('message_next',{index:index,data:sessionDescription});                                      //work here
+  socket.emit('message_next',{index:temp_index,data:sessionDescription});                                      //work here
 
 }
