@@ -61,6 +61,10 @@ function Node (data) {
 	this.children = [];
 }
 
+
+//                          Seriously if you were not going to use it ,why declare it then!!?
+
+
 Tree.prototype.add = function(data, toData, traversal) {
 	var child = new Node(data);var  parent = null; 
 	var callback = function(node) {
@@ -81,28 +85,43 @@ Tree.prototype.add = function(data, toData, traversal) {
 
 Tree.prototype.traverseBF = function(callback) {
 		console.log("traverseBF called");
-	
+	var Is_new_child_added=false;
 	var queue = new Queue();
-
+	
 	queue.enqueue(this._root);
-
+	console.log("starting queue");
+	console.log(queue);
 	var currentTree = queue.dequeue();
 
 	while(currentTree){
+		console.log("////////////////////////////");
+		console.log(currentTree);
+		console.log("/////////////////////////");
+		console.log("Queue:");
+		console.log(queue);
+		console.log("////////////////////////");
+
+		
 		for (var i = 0, length = currentTree.data.children.length; i < length; i++) {
 			console.log("looping");
-			queue.enqueue(currentTree.data.children[i]);
-		}
 
-		callback(currentTree);console.log("BFS breaks");break;
-		currentTree = queue.dequeue();
+			//com'on vedansh we have to enqueue a new node ,not just a string!!
+			var temp_child=new Node (currentTree.data.children[i]);
+			temp_child.parent=currentTree.data.data;
+			temp_child.children=[];
+			queue.enqueue(temp_child);
+		}    
+
+		Is_new_child_added=callback(currentTree);console.log("BFS breaks");
+		if(queue.first) currentTree = queue.dequeue();
+		if(Is_new_child_added) break;
 	}
 };
 
 
 
-
-var peer_tree = new Tree();
+var peer_tree;
+//var peer_tree = new Tree();
 
 var connected_callback=function(socket){
 
@@ -113,7 +132,7 @@ if(currentTree.data.children.length<max_peer_connections){
   
 }
 */
-var max_peer_connections=5;
+var max_peer_connections=3;
 
 var callback_node_add=function(currentTree){
 	console.log("node_add callled");
@@ -121,7 +140,10 @@ var callback_node_add=function(currentTree){
 		currentTree.data.children.push(socket.id);
 		io.to(currentTree.data.data).emit('message',{data:"startService",index:socket.id});
 		console.log("sent message to socket:  ");console.log(currentTree.data.data);
-	}
+		return true;
+	}				
+
+	return false;			//we need to let the transverseBF break only when no child is added!!
 }
 
 
