@@ -65,26 +65,14 @@ try{
   }
 
 }
-////////////////////////////////////
-//now if a client is deleted
-// make sure that stream is forwarded to other clients in an organised way
-//so for that. If got the stream then we will send the message to the next client if it is present
-//make that client send the joined signal again and start the connection.
 
-
-///////////////////////////////////////////////////
-//create peer connection on signal 
 function handler_remoteStreamAdded(event) {
   console.log('Remote stream added.');
   video.src = window.URL.createObjectURL(event.stream);
+  video.play();
   channelStream = event.stream;
 
-  //
   console.log("sending send_join_signal");
-//  
-                   // work here
- /// socket.emit('message_next',{index:index,data:'send_join_again_signal'});
-//
 }
 
 function handler_IceCandidate(event){
@@ -119,17 +107,12 @@ function setLocalAndSendMessage(sessionDescription){
 
 }
 
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
-// to make the connected client act as a server to next client we proceed
-
-//messaging service listening for messages from next sockets
-
 var message_callback = function(message){
 
 
   if(message.data=='startService'){
   console.log("starting service and sending signal to client");
-temp_index=message.index;
+  temp_index=message.index;
   socket.emit('message_next',{index:temp_index+"",data:"startService"});
   maybeStartForNextClient();
 }
@@ -178,7 +161,7 @@ function handler_next_IceCandidate(event){
     console.log('icecandidate event: ', event);                         //work here
   //sending info about network candidate to first client
   if (event.candidate) {
-    socket.emit('message_next',{temp_index:index,data:{
+    socket.emit('message_next',{index:temp_index,data:{
       type: 'candidate',
       label: event.candidate.sdpMLineIndex,
       id: event.candidate.sdpMid,

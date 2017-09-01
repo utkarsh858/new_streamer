@@ -10,7 +10,7 @@ var temp_index;  //stores index for a short amount of time till the connection i
 
 var pcConfig = {
   'iceServers': [{
-    'urls': 'stun:stun.l.google.com:19302'
+    'urls': 'stun:stun.voiparound.com'
   }]
 };
 ////////////////////////////////////////
