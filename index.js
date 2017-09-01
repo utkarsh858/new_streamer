@@ -16,6 +16,14 @@ var server_client_lines=3,client_client_lines=3;
 
 var connected_callback=function(socket){
 
+function recursive_disconnect_children(index){
+	if(tree[index])
+	for(var i=index*client_client_lines+1;i<index*client_client_lines+1;i++)
+		recursive_disconnect_children(tree[i]);
+	io.to(tree[index]).emit("send_join_again_signal");
+	tree[index]=undefined;
+
+}
 
 
 
@@ -31,19 +39,26 @@ var message_callback=function(message){
 
 	
 	var index_child=tree.indexOf(socket.id);
-	var index_parent=Math.floor((index_child-1)/server_client_lines);
+	var index_parent=Math.floor((index_child-1)/client_client_lines);
 	io.to(tree[index_parent]).emit('message',{index:socket.id,data:message});
 }
 
 var joined_callback=function(){
 	console.log("Pushing a client");
 	
-	tree.push(socket.id);
+	//tree.push(socket.id);  old simple method,Na'ah...
+	
+	for(var i=1;;i++) {
+		console.log("tree["+i+"]"+tree[i]);
+		if(tree[i]===undefined) {tree[i]=socket.id; 
+		break;}}
 	
 	var index_child=tree.indexOf(socket.id);
-	var index_parent=Math.floor((index_child-1)/server_client_lines);
+	var index_parent=Math.floor((index_child-1)/client_client_lines);
+	
 	console.log("A faccha got added with id:"+index_child+":"+tree[index_child]+"   parent:"+ index_parent+":"+tree[index_parent]);
 	io.to(tree[index_parent]).emit('message',{data:"startService",index:socket.id});
+	
 }
 
 var joined_again_callback =function(room){
@@ -51,7 +66,9 @@ var joined_again_callback =function(room){
 }
 
 var disconnect_callback = function(){
-	console.log("disconnecteds")
+	console.log("disconnecteds");
+	var index_child=tree.indexOf(socket.id); 
+	recursive_disconnect_children(index_child);
 }
 
 function joined_server_callback(){

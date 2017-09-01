@@ -28,8 +28,8 @@ console.log("sent the signal to send stream");
 var message_next_callback = function(message){
 if(message=='send_join_again_signal'){
   console.log("sending joined signal again");
-
-  socket.emit('joined_again',temp_index);                          //this is when some previous client has been disconnected. 
+  socket.emit('joined');
+  //socket.emit('joined_again',temp_index);                          //this is when some previous client has been disconnected. 
 }
 else if(message=="startService"){
   console.log('received message for starting service on client');
