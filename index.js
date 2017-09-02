@@ -17,15 +17,28 @@ var server_client_lines=3,client_client_lines=3;
 var connected_callback=function(socket){
 
 function recursive_disconnect_children(index){
-	if(tree[index])
-	for(var i=index*client_client_lines+1;i<index*client_client_lines+1;i++)
-		recursive_disconnect_children(tree[i]);
-	io.to(tree[index]).emit("send_join_again_signal");
+	if(tree[index]){
+		var message="send_join_again_signal";
+	io.to(tree[index]).emit('message_next',message);
+	console.log("recursive_disconnect called .socket disconnected ::"+tree[index]);
 	tree[index]=undefined;
-
+	for(var i=index*client_client_lines+1;i<=index*client_client_lines+client_client_lines;i++)
+	{
+		recursive_disconnect_children(i);
+		wait(500);
+	}
+	
+	
+	}
 }
 
-
+function wait(ms){
+   var start = new Date().getTime();
+   var end = start;
+   while(end < start + ms) {
+     end = new Date().getTime();
+  }
+}
 
 
 var message_next_callback=function(message){
@@ -66,7 +79,7 @@ var joined_again_callback =function(room){
 }
 
 var disconnect_callback = function(){
-	console.log("disconnecteds");
+	console.log("disconnecteds"+socket.id);
 	var index_child=tree.indexOf(socket.id); 
 	recursive_disconnect_children(index_child);
 }
